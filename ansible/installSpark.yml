@@ -1,0 +1,14 @@
+- name: Install Spark
+  hosts: all
+  user: ubuntu
+  tasks:
+    - name: Install OpenJDK
+      apt:
+        name: openjdk-11-jdk
+        state: present
+        update_cache: yes
+      become: yes
+
+    - name: Download Spark
+      script: ./install_spark.sh
+      become: no
