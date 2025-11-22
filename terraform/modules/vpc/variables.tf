@@ -5,7 +5,3 @@ variable "spark_admin_key_id" {
 variable "spark_admin_key_secret" {
   type = string
 }
-
-variable "spark_vpc_id" {
-  type = string
-}

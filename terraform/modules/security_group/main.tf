@@ -7,6 +7,8 @@ provider "aws" {
 // Create security group
 resource "aws_security_group" "spark_sc" {
     name = "spark_sc"
+    vpc_id = var.spark_vpc_id
+
 
     # inbound internet access
     ingress {

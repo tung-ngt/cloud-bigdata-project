@@ -18,35 +18,76 @@ data "aws_ami" "ubuntu" {
 
 resource "aws_key_pair" "spark_admin_ssh_key" {
   key_name   = var.spark_admin_ssh_key_name
-  public_key = file("${var.spark_admin_ssh_key_path}")
+  public_key = file("${var.spark_admin_ssh_key_path}.pub")
 }
 
 
 // Run the instance
-resource "aws_instance" "namenode" {
+resource "aws_instance" "master" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
 
   tags = {
-    Name = "namenode"
+    Name = "master"
   }
 
   vpc_security_group_ids = [var.security_group_id]
+  subnet_id = var.spark_subnet_id
+  private_ip =  "10.0.1.10"
 
 
   key_name = aws_key_pair.spark_admin_ssh_key.key_name
 
-  user_data = <<EOF
-#!/bin/bash
-# Disable password login
-sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
-systemctl restart sshd
-EOF
+  provisioner "remote-exec" {
+    inline = [
+      "sudo sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config",
+      "sudo systemctl restart ssh"
+    ]
 
+    connection {
+      type        = "ssh"
+      host        = self.public_ip
+      user        = "ubuntu"
+      private_key = file(var.spark_admin_ssh_key_path)
+    }
+  }
 }
 
-resource "aws_instance" "datanode" {
-  count = var.datanode_count
+
+// Run the instance
+resource "aws_instance" "edge" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = var.instance_type
+
+  tags = {
+    Name = "edge"
+  }
+
+  vpc_security_group_ids = [var.security_group_id]
+  subnet_id = var.spark_subnet_id
+  private_ip =  "10.0.1.11"
+
+
+  key_name = aws_key_pair.spark_admin_ssh_key.key_name
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config",
+      "sudo systemctl restart ssh"
+    ]
+
+    connection {
+      type        = "ssh"
+      host        = self.public_ip
+      user        = "ubuntu"
+      private_key = file(var.spark_admin_ssh_key_path)
+    }
+  }
+}
+
+
+resource "aws_instance" "worker" {
+  count = var.worker_count
 
   ami           = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
@@ -56,15 +97,22 @@ resource "aws_instance" "datanode" {
   }
 
   vpc_security_group_ids = [var.security_group_id]
-
+  subnet_id = var.spark_subnet_id
+  private_ip = lookup(var.ips, count.index)
 
   key_name = aws_key_pair.spark_admin_ssh_key.key_name
 
-  user_data = <<EOF
-#!/bin/bash
-# Disable password login
-sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
-systemctl restart sshd
-EOF
+  provisioner "remote-exec" {
+    inline = [
+      "sudo sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config",
+      "sudo systemctl restart ssh"
+    ]
 
+    connection {
+      type        = "ssh"
+      host        = self.public_ip
+      user        = "ubuntu"
+      private_key = file(var.spark_admin_ssh_key_path)
+    }
+  }
 }
