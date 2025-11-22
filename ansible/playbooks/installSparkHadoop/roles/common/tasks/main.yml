@@ -1,0 +1,58 @@
+- name: Install OpenJDK
+  apt:
+    name: openjdk-11-jdk
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Download Spark
+  script: ./install_spark.sh
+  become: no
+
+- name: Config hosts
+  template:
+    src: hosts.j2
+    dest: /etc/hosts
+    owner: root
+    group: root
+    mode: '0644'
+  become: yes
+
+- name: Config spark slaves
+  template:
+    src: slaves.j2
+    dest: ~/spark/conf/slaves
+
+- name: Download hdfs
+  script: ./install_hdfs.sh
+  become: no
+
+- name: Config hdfs slaves (renamed to hdfs workers on version > v3)
+  template:
+    src: slaves.j2
+    dest: ~/hadoop/etc/hadoop/workers
+
+- name: Config hdfs masters
+  template:
+    src: masters.j2
+    dest: ~/hadoop/etc/hadoop/masters
+
+- name: Config core-site
+  template:
+    src: core-site.xml.j2
+    dest: ~/hadoop/etc/hadoop/core-site.xml
+
+- name: Config yarn-site
+  template:
+    src: yarn-site.xml.j2
+    dest: ~/hadoop/etc/hadoop/yarn-site.xml
+
+- name: Config mapred-site
+  template:
+    src: mapred-site.xml.j2
+    dest: ~/hadoop/etc/hadoop/mapred-site.xml
+
+- name: Config hdfs-site
+  template:
+    src: hdfs-site.xml.j2
+    dest: ~/hadoop/etc/hadoop/hdfs-site.xml

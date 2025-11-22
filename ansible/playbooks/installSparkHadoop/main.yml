@@ -1,0 +1,23 @@
+- name: Install Java OpenJDK, Spark, and HDFS
+  hosts: all
+  user: ubuntu
+  vars_files:
+    - ../vars/main.yml
+  roles:
+    - role: common
+
+- name: Format hdfs name node and create cluster ssh key on master
+  hosts: master
+  user: ubuntu
+  vars_files:
+    - ../vars/main.yml
+  roles:
+    - role: master
+
+- name: Copy master ssh pub to workers
+  hosts: workers
+  user: ubuntu
+  vars_files:
+    - ../vars/main.yml
+  roles:
+    - role: workers
