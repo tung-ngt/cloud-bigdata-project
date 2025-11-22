@@ -16,13 +16,15 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
+
+// Add the spark_admin ssh key pair to aws
 resource "aws_key_pair" "spark_admin_ssh_key" {
   key_name   = var.spark_admin_ssh_key_name
   public_key = file("${var.spark_admin_ssh_key_path}.pub")
 }
 
 
-// Run the instance
+// Run the master instance
 resource "aws_instance" "master" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
@@ -31,13 +33,15 @@ resource "aws_instance" "master" {
     Name = "master"
   }
 
+  // Setup the network and security_group
   vpc_security_group_ids = [var.security_group_id]
   subnet_id = var.spark_subnet_id
   private_ip =  "10.0.1.10"
 
-
+  // Add the spardk_add ssh key to authorized_keys
   key_name = aws_key_pair.spark_admin_ssh_key.key_name
 
+  // Only allow ssh key authentiation, no password authentiation
   provisioner "remote-exec" {
     inline = [
       "sudo sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config",
@@ -54,7 +58,7 @@ resource "aws_instance" "master" {
 }
 
 
-// Run the instance
+// Run the edge instance
 resource "aws_instance" "edge" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = var.instance_type
@@ -63,13 +67,15 @@ resource "aws_instance" "edge" {
     Name = "edge"
   }
 
+  // Setup the network and security_group
   vpc_security_group_ids = [var.security_group_id]
   subnet_id = var.spark_subnet_id
   private_ip =  "10.0.1.11"
 
-
+  // Add the spardk_add ssh key to authorized_keys
   key_name = aws_key_pair.spark_admin_ssh_key.key_name
 
+  // Only allow ssh key authentiation, no password authentiation
   provisioner "remote-exec" {
     inline = [
       "sudo sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config",
@@ -85,7 +91,7 @@ resource "aws_instance" "edge" {
   }
 }
 
-
+// Run the worker instances
 resource "aws_instance" "worker" {
   count = var.worker_count
 
@@ -96,12 +102,15 @@ resource "aws_instance" "worker" {
     Name = lookup(var.hostnames, count.index)
   }
 
+  // Setup the network and security_group
   vpc_security_group_ids = [var.security_group_id]
   subnet_id = var.spark_subnet_id
   private_ip = lookup(var.ips, count.index)
 
+  // Add the spardk_add ssh key to authorized_keys
   key_name = aws_key_pair.spark_admin_ssh_key.key_name
 
+  // Only allow ssh key authentiation, no password authentiation
   provisioner "remote-exec" {
     inline = [
       "sudo sed -i 's/^#PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config",

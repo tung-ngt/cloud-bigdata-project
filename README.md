@@ -19,7 +19,10 @@ To use the repository, the sh scripts are provided. the scripts are divided into
 ./install_aws_cli.sh
 ./terraform.sh
 
-before running the terraform provision, remember to add the AWS access key to the path like in example-env.sh
+Before running the terraform provision, remember to add the AWS access key to the path like in example-env.sh
+
+Gen the ssh key and put it in the keys folder to use as the key pair for spark_admin aws user
+
 
 ### Provisioning the infrastruture
 ./terraform_provision_servers.sh <number-worker>
